@@ -1,0 +1,231 @@
+---
+title: 'Bios 6301: Assignment 3'
+author: Yan Yan
+output: pdf_document
+---
+
+*Due Thursday, 27 September, 1:00 PM*
+
+50 points total.
+
+Submit a single knitr file (named `homework3.rmd`) by email to coleman.r.harris@vanderbilt.edu.
+Place your R code in between the appropriate chunks for each question.
+Check your output by using the `Knit HTML` button in RStudio.
+
+$5^{n=day}$ points taken off for each day late.
+
+### Question 1 ###
+
+**15 points**
+
+Write a simulation to calculate the power for the following study
+design.  The study has two variables, treatment group and outcome.
+There are two treatment groups (0, 1) and they should be assigned
+randomly with equal probability.  The outcome should be a random normal
+variable with a mean of 60 and standard deviation of 20.  If a patient
+is in the treatment group, add 5 to the outcome.  5 is the true
+treatment effect.  Create a linear model for the outcome by the
+treatment group, and extract the p-value (hint: see assigment1).
+Test if the p-value is less than or equal to the alpha level, which
+should be set to 0.05.
+
+Repeat this procedure 1000 times. The power is calculated by finding
+the percentage of times the p-value is less than or equal to the alpha
+level.  Use the `set.seed` command so that the professor can reproduce
+your results.
+
+###1. Find the power when the sample size is 100 patients. (10 points)
+```{r}
+set.seed(10)
+pv <- NULL
+repeat {
+n <- 100                         # sample size
+treat <- numeric(n)
+outcome <- numeric(n)
+for (i in seq(n)) {
+treat[i] <- sample(c(0,1),1)   # assign treatment to each patient
+outcome[i] <- rnorm(1,mean = 60,sd = 20)  # assign treatment to each patient
+if (treat[i] == 1) outcome[i] = outcome[i] + 5
+}
+z <- data.frame(treat,outcome)
+mod.3 <- lm(outcome~treat, data = z)   # linear model
+pv1 <- summary(mod.3)$coefficients[2,4] # extract p value
+pv <- c(pv,pv1)
+if(length(pv)==1000){break}  ## repeat 1000 times
+}
+mean(pv<=0.05)
+
+```
+###2. Find the power when the sample size is 1000 patients. (5 points)
+```{r}
+set.seed(11)
+pv2 <- NULL
+pv2 <- replicate(1e3,{          #repeat 1000 times
+n <- 1000                         # sample size 1000
+treat <- numeric(n)
+outcome <- numeric(n)
+for (i in seq(n)) {
+treat[i] <- sample(c(0,1),1)   # assign treatment to each patient
+outcome[i] <- rnorm(1,mean = 60,sd = 20)  # assign treatment to each patient
+if (treat[i] == 1) outcome[i] = outcome[i] + 5
+}
+z <- data.frame(treat,outcome)
+mod.3 <- lm(outcome~treat, data = z)   # linear model
+summary(mod.3)$coefficients[2,4] # extract p value
+})
+mean(pv2<=0.05)
+```
+The power increased with sample size increasing.
+
+
+### Question 2 ###
+
+**14 points**
+
+Obtain a copy of the [football-values lecture](https://github.com/couthcommander/football-values).
+Save the `2018/proj_wr18.csv` file in your working directory.  Read
+in the data set and remove the first two columns.
+
+###1. Show the correlation matrix of this data set. (4 points)
+```{r}
+my.data <- read.csv("proj_wr18.csv")
+my.data2 <- my.data[,-1:-2]
+res <- cor(my.data2)
+round(res,2)
+```
+
+###1. Generate a data set with 30 rows that has a similar correlation structure.  Repeat the procedure 10,000 times and return the mean correlation matrix. (10 points)
+```{r}
+library(MASS)
+mod.wr=lm(rush_att~.,data=my.data2)
+print(summary(mod.wr))
+rho.wr <- cor(my.data2)
+vcov.wr=var(my.data2)		
+means.wr=colMeans(my.data2)
+
+keep.1=0
+loops=10000
+
+for (i in 1:loops) {
+      wr.sim = mvrnorm(30, mu = means.wr, Sigma = vcov.wr)
+      keep.1=keep.1+cor(wr.sim)/loops   
+}
+
+rho.wr ; keep.1  
+```
+
+### Question 3 ###
+
+**21 points**
+
+Here's some code:
+
+```{r}
+set.seed(890)
+nDist <- function(n = 100) {
+    df <- 10
+    prob <- 1/3
+    shape <- 1
+    size <- 16
+    list(
+        beta = rbeta(n, shape1 = 5, shape2 = 45),
+        binomial = rbinom(n, size, prob),
+        chisquared = rchisq(n, df),
+        exponential = rexp(n),
+        f = rf(n, df1 = 11, df2 = 17),
+        gamma = rgamma(n, shape),
+        geometric = rgeom(n, prob),
+        hypergeometric = rhyper(n, m = 50, n = 100, k = 8),
+        lognormal = rlnorm(n),
+        negbinomial = rnbinom(n, size, prob),
+        normal = rnorm(n),
+        poisson = rpois(n, lambda = 25),
+        t = rt(n, df),
+        uniform = runif(n),
+        weibull = rweibull(n, shape)
+    )
+}
+```
+
+1. What does this do? (3 points)
+
+    ```{r}
+    round(sapply(nDist(500), mean), 2)
+    ```
+    
+    ```
+    Generate 500 values for each of the distribution (with some fixed parameters), evaluate the mean for each of the distribution, and round to 2nd decimal.
+    ```
+
+1. What about this? (3 points)
+
+    ```{r}
+    sort(apply(replicate(20, round(sapply(nDist(10000), mean), 2)), 1, sd))
+    ```
+    
+    ```
+    For each of the distribution, genarate 10000 values, evaluate and round the mean.Replicate 20 times, we got 20 means for each distribution. Evaluate standard deviation for these 20 means for each distribution("1"--by row), then sort them increasingly. 
+    ```
+
+    In the output above, a small value would indicate that `N=10,000` would provide a sufficent sample size as to estimate the mean of the distribution. Let's say that a value *less than 0.02* is "close enough".
+
+1. For each distribution, estimate the sample size required to simulate the distribution's mean. (15 points)
+
+Don't worry about being exact. It should already be clear that N < 10,000 for many of the distributions. You don't have to show your work. Put your answer to the right of the vertical bars (`|`) below.
+
+distribution|N
+---|---
+beta| 4
+binomial|  5700
+chisquared| 30000
+exponential| 1350
+f| 640
+gamma| 2000
+geometric|8500
+hypergeometric| 3700
+lognormal| 8000
+negbinomial| 190000
+normal| 1950
+poisson| 49000
+t| 2300
+uniform|100
+weibull|1800
+```{r}
+#### code used for finding the sample size
+#### change initial value of i and increment for each distribution
+hyp.sd <- NULL
+i <- 3000
+repeat{
+  set.seed(890)
+  mean.sd <- apply(replicate(20, round(sapply(nDist(i), mean), 2)), 1, sd)
+  as.data.frame(mean.sd)
+  hyp.sd[i] <- mean.sd["hypergeometric"] 
+  if(hyp.sd[i]< 0.02) {
+    break}
+  i <- i+100
+}
+i
+```
+I used the following initial values and increment for searching the best sample size. 
+
+Distribution|Initial Value|Increment|Result
+----|---|---|---
+Beta| 2| 1 |4 |
+binomial| 5000| 100 |5700
+chisquared    | 25000         | 1000      |30000  
+exponential   | 800           | 50        |1350  
+f             | 600           | 20        |640   
+gamma         | 1000          | 100       |2000   
+geometric     | 7000          | 500       |8500  
+hypergeometric| 3000          | 100       |3700  
+lognormal     | 5000          | 500       |8000  
+negbinomial   | 100000        | 10000     |190000 
+normal        | 1000          | 50        |1950    
+poisson       | 45000         | 1000      |49000   
+t             | 2000          | 100       |2300    
+uniform       | 50            | 10        |100     
+weibull       | 1500          | 100       |1800    
+
+
+
+
