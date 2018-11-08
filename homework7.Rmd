@@ -1,0 +1,250 @@
+---
+title: 'Bios 6301: Assignment 7'
+author: Yan Yan
+output: pdf_document
+---
+
+*Due Thursday, 08 November, 1:00 PM*
+
+$5^{n=day}$ points taken off for each day late.
+
+40 points total.
+
+Submit a single knitr file (named `homework7.rmd`), along with a valid PDF output file. Inside the file, clearly indicate which parts of your responses go with which problems (you may use the original homework document as a template). Add your name as `author` to the file's metadata section. Raw R code/output or word processor files are not acceptable.
+
+Failure to name file `homework7.rmd` or include author name may result in 5 points taken off.
+
+### Question 1 ###
+
+**21 points**
+
+Use the following code to generate data for patients with repeated measures of A1C (a test for levels of blood glucose).
+
+```{r}
+genData <- function(n) {
+    if(exists(".Random.seed", envir = .GlobalEnv)) {
+        save.seed <- get(".Random.seed", envir= .GlobalEnv)
+        on.exit(assign(".Random.seed", save.seed, envir = .GlobalEnv))
+    } else {
+        on.exit(rm(".Random.seed", envir = .GlobalEnv))
+    }
+    set.seed(n)
+    subj <- ceiling(n / 10)
+    id <- sample(subj, n, replace=TRUE)
+    times <- as.integer(difftime(as.POSIXct("2005-01-01"), as.POSIXct("2000-01-01"), units='secs'))
+    dt <- as.POSIXct(sample(times, n), origin='2000-01-01')
+    mu <- runif(subj, 4, 10)
+    a1c <- unsplit(mapply(rnorm, tabulate(id), mu, SIMPLIFY=FALSE), id)
+    data.frame(id, dt, a1c)
+}
+x <- genData(500)
+```
+
+Perform the following manipulations: (3 points each)
+
+1. Order the data set by `id` and `dt`.
+```{r}
+x <- x[order(x$id,x$dt),]
+```
+
+2. For each `id`, determine if there is more than a one year gap in between observations.  Add a new row at the one year mark, with the `a1c` value set to missing.  A two year gap would require two new rows, and so forth.
+```{r}
+library(lubridate)
+#split x by id
+x.list <- split(x,x$id)
+
+#create the new rows and combine them to each list.
+x.list.newrow <- lapply(x.list,function(y){
+  # diff time between each observations
+  diff.y <- difftime(y$dt[2:length(y$dt)], y$dt[1:(length(y$dt)-1)], units='days')
+  diff.y.gt1y <- which(diff.y>365)
+  if(length(diff.y.gt1y)>0){
+    y.newrow <- data.frame(id=y[diff.y.gt1y,]$id,dt=y[diff.y.gt1y,]$dt + years(1),a1c=NA)
+    y<-rbind(y,y.newrow)
+  }
+  y   # return combined or original list
+    }
+    )
+
+#convert to datafram
+x.list.3 <- do.call("rbind",x.list.newrow)
+
+#reorder combined rows
+x <- x.list.3[order(x.list.3$id,x.list.3$dt),] 
+          
+```
+
+3. Create a new column `visit`.  For each `id`, add the visit number.  This should be 1 to `n` where `n` is the number of observations for an individual.  This should include the observations created with missing a1c values.
+```{r}
+# unique id in x
+
+id.x <- table(x$id)
+for(i in 1:length(id.x)){
+  x[which(x$id == i),'visit'] <- id.x[i]
+}
+
+```
+
+
+4. For each `id`, replace missing values with the mean `a1c` value for that individual.
+```{r}
+# calculate all the means for a1c 
+mean.a1c <- NULL
+for(i in 1:length(id.x)){
+  mean.a1c[i] <- mean(x[which(x$id == i),]$a1c, na.rm = TRUE )
+}
+ 
+
+#replace missing values with mean a1c value
+for (j in 1:nrow(x)) {
+  if(is.na(x$a1c[j])){
+    id <- x$id[j]
+    x$a1c[j] <- mean.a1c[id]
+  }
+}
+
+```
+
+5. Print mean `a1c` for each `id`.
+```{r}
+a1c.sumy <- data.frame(id = as.data.frame(id.x)[,1], a1c = mean.a1c)
+a1c.sumy
+```
+
+6. Print total number of visits for each `id`.
+```{r}
+visit.sum <- as.data.frame(id.x)
+colnames(visit.sum)  <- c("id", "visits")
+visit.sum
+```
+
+7. Print the observations for `id = 15`.
+```{r}
+x[which(x$id == 15),]
+```
+
+
+### Question 2 ###
+
+**16 points**
+
+Import the `addr.txt` file from the GitHub repository.  This file contains a listing of names and addresses (thanks google).  Parse each line to create a data.frame with the following columns: lastname, firstname, streetno, streetname, city, state, zip.  Keep middle initials or abbreviated names in the firstname column.  Print out the entire data.frame.
+
+```{r}
+# read in the text file and leave the data as strings
+addr <- read.delim("addr.txt", header = F, as.is = T)
+
+# strsplit using space >= 2
+addr2 <- strsplit(addr[,1],"\\s{2,}")
+
+# test whether I splitted it correctly - each element should have a length of 6
+table(unlist(lapply(addr2, length)))
+
+# make it a dataframe
+addr3 <- do.call(rbind, addr2)
+
+# remove the space in some zipcodes
+addr3[,6] <- gsub("\\s$","",addr3[,6])
+
+# split street no. and street name
+str.no <- strsplit(gsub('^([0-9]*) (.*)', '\\1/\\2', addr3[,3]), "/")
+
+# combine as a dataframe
+str.info <- do.call(rbind, str.no)
+
+# combine to the other columns
+addr4 <- cbind(addr3[,1:2],str.info,addr3[,4:ncol(addr3)])
+
+# names of columns
+colnames(addr4) <- c("lastname","firstname","streetno","streetname","city","state","zip")
+head(addr4)
+```
+
+
+
+
+### Question 3 ###
+
+**3 points**
+
+The first argument to most functions that fit linear models are formulas.  The following example defines the response variable `death` and allows the model to incorporate all other variables as terms. `.` is used to mean all columns not otherwise in the formula.
+
+```{r}
+url <- "https://github.com/fonnesbeck/Bios6301/raw/master/datasets/haart.csv"
+haart_df <- read.csv(url)[,c('death','weight','hemoglobin','cd4baseline')]
+coef(summary(glm(death ~ ., data=haart_df, family=binomial(logit))))
+```
+
+Now imagine running the above several times, but with a different response and data set each time.  Here's a function:
+
+```{r}
+myfun <- function(dat, response) {
+  form <- as.formula(response ~ .)
+  coef(summary(glm(form, data=dat, family=binomial(logit))))
+}
+
+```
+
+Unfortunately, it doesn't work. `tryCatch` is "catching" the error so that this file can be knit to PDF.
+
+```{r}
+tryCatch(myfun(haart_df, death), error = function(e) e)
+```
+
+What do you think is going on?  Consider using `debug` to trace the problem.
+```{r}
+debug(myfun)
+```
+
+I added "print(form)" to the line before coef(), and called it again.
+
+```{r}
+myfun <- function(dat, response) {
+  form <- as.formula(response ~ .)
+  print(form)
+  coef(summary(glm(form, data=dat, family=binomial(logit))))
+}
+tryCatch(myfun(haart_df, death), error = function(e) e)
+```
+It showed that eventhough myfun makes "response ~." a formula and store it in an object "form", when printed out, "form" is actually just "response ~ .", not "death ~ ." as I wanted. So, it failed to pass the true argument to the form.\
+
+As traceback records showed, when we call "coef(summary(glm(form, data=haart_df, family=binomial(logit))))", a serise of functions will be called behind the screen. The error message is created by fucntion 9 to 10 "eval(predvars, data, env)". \
+
+
+That is, when object "form" was evaluated in glm(), "response" can not be found in the environment, so eval(predvars, data, env) was called to evaluate the object in the parent environment, and got "death", but "death" is only defined inside the dataframe, so we got the error.\
+
+Why "coef(summary(glm(death ~ ., data=haart_df, family=binomial(logit))))" works fine? It's because "death" can be found in the environment of the datafram where it was defined-- haart_df.\
+
+
+
+
+**5 bonus points**
+
+Create a working function.\
+
+Based on the above analysis, I first tried to pass the name of the response variable as a string into the argument, and paste it with "~ ." to make a formula.
+
+```{r}
+#response <- "death"
+myfun2 <- function(dat, response) {
+  form <- as.formula(paste(response, "~ ."))
+  coef(summary(glm(form, data=dat, family=binomial(logit))))
+}
+myfun2(haart_df, "death")
+```
+It worked, but you need to quote your response variable.\
+
+To omit the "", I added deparse(substitute(response)) to extract the string, and myfun4 also works, as shown below.
+```{r}
+myfun4 <- function(dat, response) {
+  response <- (deparse(substitute(response)))
+  print(response)
+  form <- as.formula(paste(response, "~ ."))
+  print(form)
+  coef(summary(glm(form, data=dat, family=binomial(logit))))
+}
+
+myfun4(haart_df, death)
+
+```
+
