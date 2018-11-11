@@ -1,8 +1,12 @@
 ---
 title: 'Bios 6301: Assignment 7'
-author: Yan Yan
-output: pdf_document
+author: "Yan Yan"
+output:
+  html_document:
+    df_print: paged
 ---
+
+39/40 Great job Yan! - cole h
 
 *Due Thursday, 08 November, 1:00 PM*
 
@@ -48,6 +52,8 @@ x <- x[order(x$id,x$dt),]
 ```
 
 2. For each `id`, determine if there is more than a one year gap in between observations.  Add a new row at the one year mark, with the `a1c` value set to missing.  A two year gap would require two new rows, and so forth.
+(-1) See comment at end of question.
+
 ```{r}
 library(lubridate)
 #split x by id
@@ -85,6 +91,7 @@ for(i in 1:length(id.x)){
 
 ```
 
+(-3) It looks to me like you just input the number of visits for each id, rather than `1:n` for each visit, e.g. for someone with 4 visits, the visit variable would be `[1,2,3,4]` for each visit.
 
 4. For each `id`, replace missing values with the mean `a1c` value for that individual.
 ```{r}
@@ -117,12 +124,16 @@ visit.sum <- as.data.frame(id.x)
 colnames(visit.sum)  <- c("id", "visits")
 visit.sum
 ```
+(-1) See below.
+
 
 7. Print the observations for `id = 15`.
+(-1) See below.
 ```{r}
 x[which(x$id == 15),]
 ```
 
+It looks like you forgot to account for when there is a 2+ year gap in observations. This meant some of your counts are wrong (like id 15 and 16), and it leads you to leave off a row when printing the observations for 15. Let me know if you want help with this!
 
 ### Question 2 ###
 
@@ -157,7 +168,7 @@ addr4 <- cbind(addr3[,1:2],str.info,addr3[,4:ncol(addr3)])
 
 # names of columns
 colnames(addr4) <- c("lastname","firstname","streetno","streetname","city","state","zip")
-head(addr4)
+knitr::kable(addr4)
 ```
 
 
@@ -215,10 +226,12 @@ That is, when object "form" was evaluated in glm(), "response" can not be found 
 
 Why "coef(summary(glm(death ~ ., data=haart_df, family=binomial(logit))))" works fine? It's because "death" can be found in the environment of the datafram where it was defined-- haart_df.\
 
-
+This is an excellent explanation -- thanks for being so thorough!
 
 
 **5 bonus points**
+
+(+5) Great job!
 
 Create a working function.\
 
