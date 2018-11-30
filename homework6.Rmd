@@ -1,8 +1,12 @@
 ---
 title: 'Bios 6301: Assignment 6'
-author: Yan Yan
-output: pdf_document
+author: "Yan Yan"
+output:
+  html_document:
+    df_print: paged
 ---
+
+#40/40 Great job! - cole h.
 
 *Due Tuesday, 30 October, 1:00 PM*
 

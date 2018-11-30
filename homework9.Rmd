@@ -1,12 +1,16 @@
 ---
 title: 'Bios 6301: Assignment 9'
-author: Yan Yan
-output: pdf_document
+author: "Yan Yan"
+output:
+  html_document:
+    df_print: paged
 ---
 
 *Due Thursday, 29 November, 1:00 PM*
 
 $5^{n=day}$ points taken off for each day late.
+
+37/40 Great job Yan! - cole h.
 
 40 points total.
 
@@ -38,6 +42,9 @@ next_gen <- function(pop) {
 ```
 
 Use the function `next_gen` to generate nine generations (you already have the first), then use the function `hist` to plot the distribution of male heights in each generation (this will require multiple calls to `hist`). The phenomenon you see is called regression to the mean.  Provide (at least) minimal decorations such as title and x-axis labels.
+
+
+(-3) Your plots are all correct here, but I'm taking off a few points because you didn't provide any inclination into the "regression to the mean" effect. The solution plots all 9 generations together (hint: use `par()` and `mfrow`), but there are other ways to show this effect. In essence, seeing 9 plots in a row makes it hard to determine an effect like that.
 
 ```{r}
 pop2 <- list()

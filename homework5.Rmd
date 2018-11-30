@@ -1,10 +1,14 @@
 ---
 title: 'Bios 6301: Assignment 5'
-author: Yan Yan
-output: pdf_document
+author: "Yan Yan"
+output:
+  html_document:
+    df_print: paged
 ---
 
 *Due Thursday, 18 October, 1:00 PM*
+
+#37/40 Great job Yan!
 
 $5^{n=day}$ points taken off for each day late.
 
@@ -159,6 +163,7 @@ set.seed(880)
 replicate(10,crap())
 ```
 
+(-3) While your output is good, and the seed you found correct, you did not provide output that "clearly shows how the game progressed." Something like printing `x` for each roll is useful in seeing game progression!
 
 ### Question 3 ###
 

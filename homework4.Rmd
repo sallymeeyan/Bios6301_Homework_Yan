@@ -4,6 +4,8 @@ author: Yan Yan
 output: pdf_document
 ---
 
+###20/20 points, great job Yan!
+
 *Due Tuesday, 09 October, 1:00 PM*
 
 20 points total.
@@ -38,8 +40,10 @@ Use \LaTeX to create the following expressions.
     ![equation1](eq1.png)
 $$\begin{aligned}
 P(B)&=\sum_j P(B|A_j)P(A_j),\\
-&\Rightarrow P(A_i|B)=\frac{P(B|A_j)P(A_i)}{\sum_j(B|A_j)P(Aj)}
+&\Rightarrow P(A_i|B)=\frac{P(B|A_j)P(A_i)}{\sum_j(B|A_j)P(A_j)}
 \end{aligned}$$
+
+###Watch your subscripts, you missed one! I fixed it above, just keep an eye out, for super complex LaTex, things like that can get messy!
 
 1. Hint: `\zeta` (3 points)
 
